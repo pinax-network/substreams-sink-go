@@ -61,7 +61,7 @@ type Sinker struct {
 	livenessChecker LivenessChecker
 	extraHeaders    []string
 	agent           string
-	idleTimeout 	time.Duration
+	idleTimeout     time.Duration
 
 	// State
 	stats                   *Stats
@@ -277,6 +277,12 @@ func (s *Sinker) run(ctx context.Context, cursor *Cursor, handler SinkerHandler)
 
 	startBlock := s.BlockRange().StartBlock()
 	stopBlock := s.adjustedEndBlock()
+	if activeCursor != nil && !activeCursor.IsBlank() && activeCursor.Block().Num()+1 == uint64(stopBlock) {
+		s.logger.Info("current block is equal to or higher than stop block, exiting with success",
+			zap.Uint64("current_block", activeCursor.Block().Num()),
+			zap.Uint64("stop_block", uint64(stopBlock)))
+		return activeCursor, nil
+	}
 
 	for {
 		req := &pbsubstreamsrpc.Request{
