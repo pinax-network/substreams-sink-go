@@ -236,12 +236,14 @@ func (s *Sinker) Run(ctx context.Context, cursor *Cursor, handler SinkerHandler)
 func (s *Sinker) run(ctx context.Context, cursor *Cursor, handler SinkerHandler) (activeCursor *Cursor, err error) {
 	activeCursor = cursor
 
-	ssClient, closeFunc, callOpts, headers, err := client.NewSubstreamsClient(s.clientConfig)
+	ssConn, closeFunc, callOpts, headers, err := client.NewSubstreamsClientConn(s.clientConfig)
 
 	if err != nil {
 		return activeCursor, fmt.Errorf("new substreams client: %w", err)
 	}
 	s.OnTerminating(func(_ error) { closeFunc() })
+
+	ssClient := pbsubstreamsrpc.NewStreamClient(ssConn)
 
 	var headersArray []string
 
