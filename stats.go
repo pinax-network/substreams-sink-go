@@ -16,8 +16,9 @@ type Stats struct {
 	progressBlockRate *dmetrics.AvgRatePromGauge
 	undoMsgRate       *dmetrics.AvgRatePromCounter
 
-	lastBlock bstream.BlockRef
-	logger    *zap.Logger
+	lastBlock     bstream.BlockRef
+	lastBlockTime time.Time
+	logger        *zap.Logger
 }
 
 func newStats(logger *zap.Logger) *Stats {
@@ -36,6 +37,10 @@ func newStats(logger *zap.Logger) *Stats {
 
 func (s *Stats) RecordBlock(block bstream.BlockRef) {
 	s.lastBlock = block
+}
+
+func (s *Stats) RecordBlockTime(t time.Time) {
+	s.lastBlockTime = t
 }
 
 func (s *Stats) Start(each time.Duration) {
@@ -74,6 +79,10 @@ func (s *Stats) LogNow() {
 		zap.Stringer("data_msg_rate", s.dataMsgRate),
 		zap.Stringer("undo_msg_rate", s.undoMsgRate),
 		zap.Stringer("last_block", s.lastBlock),
+	}
+
+	if !s.lastBlockTime.IsZero() {
+		args = append(args, zap.Duration("drift", time.Since(s.lastBlockTime)))
 	}
 
 	if !runningFromTier1 {

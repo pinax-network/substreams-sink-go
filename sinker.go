@@ -473,6 +473,7 @@ func (s *Sinker) doRequest(
 
 			// We record our stats before the buffer action, so user sees state of "stream" and not state of buffer
 			s.stats.RecordBlock(block)
+			s.stats.RecordBlockTime(r.BlockScopedData.Clock.Timestamp.AsTime())
 			HeadBlockNumber.SetUint64(block.Num())
 			HeadBlockTimeDrift.SetBlockTime(r.BlockScopedData.Clock.Timestamp.AsTime())
 			DataMessageCount.Inc()
