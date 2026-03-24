@@ -81,10 +81,6 @@ func (s *Stats) LogNow() {
 		zap.Stringer("last_block", s.lastBlock),
 	}
 
-	if !s.lastBlockTime.IsZero() {
-		args = append(args, zap.Duration("drift", time.Since(s.lastBlockTime)))
-	}
-
 	if !runningFromTier1 {
 		args = append(args,
 			zap.Bool("live", false),
@@ -98,6 +94,9 @@ func (s *Stats) LogNow() {
 		args = append(args,
 			zap.Bool("live", true),
 		)
+		if !s.lastBlockTime.IsZero() {
+			args = append(args, zap.Duration("drift", time.Since(s.lastBlockTime)))
+		}
 	}
 	s.logger.Info("substreams stream stats", args...)
 
