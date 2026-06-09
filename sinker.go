@@ -66,6 +66,7 @@ type Sinker struct {
 	// State
 	stats                   *Stats
 	requestActiveStartBlock uint64
+	linearHandoffBlock      uint64
 }
 
 func New(
@@ -184,6 +185,15 @@ func (s *Sinker) EndpointConfig() (endpoint string, plaintext bool, insecure boo
 // is no api token was configured
 func (s *Sinker) ApiToken() string {
 	return s.clientConfig.AuthToken()
+}
+
+// LinearHandoffBlock returns the block at which the remote endpoint hands off from parallel
+// (tier2) backprocessing to linear (tier1) streaming, as reported by the latest session's
+// `Response_Session` message. A processed block at or beyond this height is being produced in
+// linear/tier1 mode (i.e. we have caught up past the backprocessed range); blocks below it are
+// replayed from backprocessed stores. Returns 0 before a session has been initialized.
+func (s *Sinker) LinearHandoffBlock() uint64 {
+	return s.linearHandoffBlock
 }
 
 func (s *Sinker) Run(ctx context.Context, cursor *Cursor, handler SinkerHandler) {
@@ -564,6 +574,7 @@ func (s *Sinker) doRequest(
 				zap.String("trace_id", r.Session.TraceId),
 			)
 			s.requestActiveStartBlock = r.Session.ResolvedStartBlock
+			s.linearHandoffBlock = r.Session.LinearHandoffBlock
 
 		default:
 			s.logger.Info("received unknown type of message", zap.Reflect("message", r))
